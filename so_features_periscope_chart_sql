@@ -1,0 +1,206 @@
+#That is SQL code used in Periscope.
+#The output is put as CSV on URL 
+#Needs to output by chunks of 10,000 observations since Periscope doesn't scale
+
+
+with lead_universe as (
+select  current_loan_leadid, mobile_phone, home_phone, work_phone from 
+--select current_loan_leadid, univ.* from 
+analytics.universe_of_ids_for_so as univ
+left outer join [loanid_leadid_connector as conn]
+on univ.infinity_loan_id = conn.loanid
+where current_loan_leadid is not null
+order by current_loan_leadid 
+limit 10000 offset 10000    
+)  
+
+select mobile_phone, work_phone, home_phone, current_loan_leadid, fpd_flag, conversion_flag,
+  case when (so_mob.notecodes like '%,1,%' or so_mob.notecodes  like '1,%' or so_mob.notecodes='1' or so_mob.notecodes  like '%,1') then 1
+       else 0
+  end as m_Is_Mailable,
+  case when (so_mob.notecodes like '%,2,%' or so_mob.notecodes  like '2,%' or so_mob.notecodes='2' or so_mob.notecodes  like '%,2') then 1
+       else 0
+  end as m_Is_Connected,
+  case when (so_mob.notecodes like '%,3,%' or so_mob.notecodes  like '3,%' or so_mob.notecodes='3' or so_mob.notecodes  like '%,3') then 1
+       else 0
+  end as m_Is_Ported,
+  case when (so_mob.notecodes like '%,4,%' or so_mob.notecodes  like '4,%' or so_mob.notecodes='4' or so_mob.notecodes  like '%,4') then 1
+       else 0
+  end as m_Is_Wireless,
+  case when (so_mob.notecodes like '%,5,%' or so_mob.notecodes  like '5,%' or so_mob.notecodes='5' or so_mob.notecodes  like '%,5') then 1
+       else 0
+  end as m_Is_Unknown_Contact,
+  case when (so_mob.notecodes like '%,7,%' or so_mob.notecodes  like '7,%' or so_mob.notecodes='7' or so_mob.notecodes  like '%,7') then 1
+       else 0
+  end as m_Is_Toll_Free_Number,
+  case when (so_mob.notecodes like '%,8,%' or so_mob.notecodes  like '8,%' or so_mob.notecodes='8' or so_mob.notecodes  like '%,8') then 1
+       else 0
+  end as m_Is_Google_Voice_Number,
+  case when (so_mob.notecodes like '%,10,%' or so_mob.notecodes  like '10,%' or so_mob.notecodes='10' or so_mob.notecodes  like '%,10') then 1
+       else 0
+  end as m_Is_Possible_Disconnected,
+  case when (so_mob.notecodes like '%,11,%' or so_mob.notecodes  like '11,%' or so_mob.notecodes='11' or so_mob.notecodes  like '%,11') then 1
+       else 0
+  end as m_Is_Portable_Voip,
+  case when (so_mob.notecodes like '%,12,%' or so_mob.notecodes  like '12,%' or so_mob.notecodes='12' or so_mob.notecodes  like '%,12') then 1
+       else 0
+  end as m_Is_Possible_Portable_Voip,
+
+case when so_mob.contactaddressout like '%PO BOX%' then 1
+     when so_mob.contactaddressout is not null and len(so_mob.contactaddressout)>0 and so_mob.contactaddressout not like '%PO BOX%' then 0
+  end as m_is_contact_address_po_box, so_mob.contactaddressout  as mob_contactaddressout,
+
+case when levenshtein(so_mob.contactaddressout, upper(li.address)) < 8 then 1
+    when so_mob.contactaddressout is not null and len(so_mob.contactaddressout)>0 and levenshtein(so_mob.contactaddressout, upper(li.address)) >= 8 then 0 end as m_contact_address_match_lev8,
+
+case when so_mob.contactaddressout is not null and len(so_mob.contactaddressout)>0 then levenshtein(so_mob.contactaddressout, upper(li.address))
+else null end as m_cont_addr_lev_dist,
+case when so_mob.contactaddressout is not null and len(so_mob.contactaddressout)>0 then 
+ len(so_mob.contactaddressout) 
+else null end as m_cont_addr_len,
+case when so_mob.contactaddressout is not null and len(so_mob.contactaddressout)>0 then 
+    (levenshtein(so_mob.contactaddressout, upper(li.address)))::float/greatest(len(so_mob.contactaddressout), len(li.address))
+else null end as m_cont_addr_lev_dist_ratio,
+  
+case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then levenshtein( upper(trim(so_mob.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) 
+else null end as m_cont_name_lev_dist,
+case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then 
+  len(so_mob.contactnameout) 
+else null end as m_cont_name_len,
+case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then 
+    (levenshtein( upper(trim(so_mob.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname)) ))::float/greatest(len(upper(trim(so_mob.contactnameout)) ), len(upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) )
+else null end as m_cont_name_lev_dist_ratio, 
+case when position( upper(trim(li.lname)) in upper(trim(so_mob.contactnameout)) ) > 0 then 1
+     when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0  and position( upper(trim(li.lname)) in upper(trim(so_mob.contactnameout)) ) = 0 then 0 end
+as m_last_name_match,
+
+so_mob.contactqualityscore as m_contact_quality_score,
+so_mob.contactphonetype as m_contact_phone_type,
+extract( days from (so_mob.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as m_days_of_porting_since20180101,
+
+  case when (so_work.notecodes like '%,1,%' or so_work.notecodes  like '1,%' or so_work.notecodes='1' or so_work.notecodes  like '%,1') then 1
+       else 0
+  end as w_Is_Mailable,
+  case when (so_work.notecodes like '%,2,%' or so_work.notecodes  like '2,%' or so_work.notecodes='2' or so_work.notecodes  like '%,2') then 1
+       else 0
+  end as w_Is_Connected,
+  case when (so_work.notecodes like '%,3,%' or so_work.notecodes  like '3,%' or so_work.notecodes='3' or so_work.notecodes  like '%,3') then 1
+       else 0
+  end as w_Is_Ported,
+  case when (so_work.notecodes like '%,4,%' or so_work.notecodes  like '4,%' or so_work.notecodes='4' or so_work.notecodes  like '%,4') then 1
+       else 0
+  end as w_Is_Wireless,
+  case when (so_work.notecodes like '%,5,%' or so_work.notecodes  like '5,%' or so_work.notecodes='5' or so_work.notecodes  like '%,5') then 1
+       else 0
+  end as w_Is_Unknown_Contact,
+  case when (so_work.notecodes like '%,7,%' or so_work.notecodes  like '7,%' or so_work.notecodes='7' or so_work.notecodes  like '%,7') then 1
+       else 0
+  end as w_Is_Toll_Free_Number,
+  case when (so_work.notecodes like '%,8,%' or so_work.notecodes  like '8,%' or so_work.notecodes='8' or so_work.notecodes  like '%,8') then 1
+       else 0
+  end as w_Is_Google_Voice_Number,
+  case when (so_work.notecodes like '%,10,%' or so_work.notecodes  like '10,%' or so_work.notecodes='10' or so_work.notecodes  like '%,10') then 1
+       else 0
+  end as w_Is_Possible_Disconnected,
+  case when (so_work.notecodes like '%,11,%' or so_work.notecodes  like '11,%' or so_work.notecodes='11' or so_work.notecodes  like '%,11') then 1
+       else 0
+  end as w_Is_Portable_Voip,
+  case when (so_work.notecodes like '%,12,%' or so_work.notecodes  like '12,%' or so_work.notecodes='12' or so_work.notecodes  like '%,12') then 1
+       else 0
+  end as w_Is_Possible_Portable_Voip,
+
+case when so_work.contactaddressout like '%PO BOX%' then 1
+     when so_work.contactaddressout is not null and len(so_work.contactaddressout)>0 and so_work.contactaddressout not like '%PO BOX%' then 0
+  end as w_is_contact_address_po_box, so_work.contactaddressout  as work_contactaddressout,
+
+case when levenshtein(so_work.contactaddressout, upper(li.address)) < 8 then 1
+   when so_work.contactaddressout is not null and len(so_work.contactaddressout)>0 and levenshtein(so_work.contactaddressout, upper(li.address)) >= 8 then 0 end as w_contact_address_match_lev8,
+
+ case when so_work.contactaddressout is not null and len(so_work.contactaddressout)>0 then levenshtein(so_work.contactaddressout, upper(li.address))
+else null end as w_cont_addr_lev_dist,
+case when so_work.contactaddressout is not null and len(so_work.contactaddressout)>0 then 
+len(so_work.contactaddressout) 
+else null end as w_cont_addr_len,
+case when so_work.contactaddressout is not null and len(so_work.contactaddressout)>0 then 
+    (levenshtein(so_work.contactaddressout, upper(li.address)))::float/greatest(len(so_work.contactaddressout), len(li.address))
+else null end as w_cont_addr_lev_dist_ratio,
+
+case when so_work.contactnameout is not null and len(so_work.contactnameout)>0 then levenshtein( upper(trim(so_work.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) 
+else null end as w_cont_name_lev_dist,
+case when so_work.contactnameout is not null and len(so_work.contactnameout)>0 then 
+  len(so_work.contactnameout) 
+else null end as w_cont_name_len,
+case when so_work.contactnameout is not null and len(so_work.contactnameout)>0 then 
+    (levenshtein( upper(trim(so_work.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname)) ))::float/greatest(len(upper(trim(so_work.contactnameout)) ), len(upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) )
+else null end as w_cont_name_lev_dist_ratio, 
+case when position( upper(trim(li.lname)) in upper(trim(so_work.contactnameout)) ) > 0 then 1
+     when so_work.contactnameout is not null and len(so_work.contactnameout)>0  and position( upper(trim(li.lname)) in upper(trim(so_work.contactnameout)) ) = 0 then 0 end
+as w_last_name_match,
+
+so_work.contactqualityscore as w_contact_quality_score,
+so_work.contactphonetype as w_contact_phone_type,
+extract( days from (so_work.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as w_days_of_porting_since20180101,
+
+  case when (so_hom.notecodes like '%,1,%' or so_hom.notecodes  like '1,%' or so_hom.notecodes='1' or so_hom.notecodes  like '%,1') then 1
+       else 0
+  end as h_Is_Mailable,
+  case when (so_hom.notecodes like '%,2,%' or so_hom.notecodes  like '2,%' or so_hom.notecodes='2' or so_hom.notecodes  like '%,2') then 1
+       else 0
+  end as h_Is_Connected,
+  case when (so_hom.notecodes like '%,3,%' or so_hom.notecodes  like '3,%' or so_hom.notecodes='3' or so_hom.notecodes  like '%,3') then 1
+       else 0
+  end as h_Is_Ported,
+  case when (so_hom.notecodes like '%,4,%' or so_hom.notecodes  like '4,%' or so_hom.notecodes='4' or so_hom.notecodes  like '%,4') then 1
+       else 0
+  end as h_Is_Wireless,
+  case when (so_hom.notecodes like '%,5,%' or so_hom.notecodes  like '5,%' or so_hom.notecodes='5' or so_hom.notecodes  like '%,5') then 1
+       else 0
+  end as h_Is_Unknown_Contact,
+  case when (so_hom.notecodes like '%,7,%' or so_hom.notecodes  like '7,%' or so_hom.notecodes='7' or so_hom.notecodes  like '%,7') then 1
+       else 0
+  end as h_Is_Toll_Free_Number,
+  case when (so_hom.notecodes like '%,8,%' or so_hom.notecodes  like '8,%' or so_hom.notecodes='8' or so_hom.notecodes  like '%,8') then 1
+       else 0
+  end as h_Is_Google_Voice_Number,
+  case when (so_hom.notecodes like '%,10,%' or so_hom.notecodes  like '10,%' or so_hom.notecodes='10' or so_hom.notecodes  like '%,10') then 1
+       else 0
+  end as h_Is_Possible_Disconnected,
+  case when (so_hom.notecodes like '%,11,%' or so_hom.notecodes  like '11,%' or so_hom.notecodes='11' or so_hom.notecodes  like '%,11') then 1
+       else 0
+  end as h_Is_Portable_Voip,
+  case when (so_hom.notecodes like '%,12,%' or so_hom.notecodes  like '12,%' or so_hom.notecodes='12' or so_hom.notecodes  like '%,12') then 1
+       else 0
+  end as h_Is_Possible_Portable_Voip,
+
+case when so_hom.contactaddressout like '%PO BOX%' then 1
+     when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 and so_hom.contactaddressout not like '%PO BOX%' then 0
+  end as h_is_contact_address_po_box, so_hom.contactaddressout as hom_contactaddressout,
+
+case when levenshtein(so_hom.contactaddressout, upper(li.address)) < 8 then 1
+  when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 and levenshtein(so_hom.contactaddressout, upper(li.address)) >= 8 then 0 end as h_contact_address_match_lev8,
+
+case when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 then levenshtein(so_hom.contactaddressout, upper(li.address))
+  else null end as h_cont_addr_lev_dist,
+case when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 then 
+  len(so_hom.contactaddressout) 
+   else null end as h_cont_addr_len,
+   case when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 then 
+    (levenshtein(so_hom.contactaddressout, upper(li.address)))::float/greatest(len(so_hom.contactaddressout), len(li.address))
+ else null end as h_cont_addr_lev_dist_ratio,
+
+so_hom.contactqualityscore as h_contact_quality_score,
+so_hom.contactphonetype as h_contact_phone_type,
+extract( days from (so_hom.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as h_days_of_porting_since20180101
+
+
+from lead_universe 
+left outer join leads as li
+on li.id=lead_universe.current_loan_leadid
+left outer join [leads_performance_all as lp]
+on lp.creditninjaid = lead_universe.current_loan_leadid
+left outer join  [service_objects_gppl2 as so_mob]
+on lead_universe.mobile_phone = so_mob.phone_number
+left outer join  [service_objects_gppl2 as so_work]
+on lead_universe.work_phone = so_work.phone_number
+left outer join  [service_objects_gppl2 as so_hom]
+on lead_universe.home_phone = so_hom.phone_number
