@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 
+
 df=pd.read_csv('https://app.periscopedata.com/api/creditninja/chart/csv/3904b1fa-1764-5227-87aa-5c4bf1613e71')
 df.head()
 df.drop_duplicates('current_loan_leadid', inplace = True)
@@ -11,6 +12,19 @@ df = df[  (df['conversion_flag']==2) | (df['conversion_flag']==1) | (df['convers
 #df=df.fillna(df.mean())
 import graphviz
 from sklearn import tree
+
+df['m_contact_address_na'] = pd.isna(df['mob_contactaddressout']) 
+df['w_contact_address_na'] = pd.isna(df['work_contactaddressout'])
+df['m_contact_name_na'] = pd.isna(df['m_last_name_match']) 
+df['w_contact_name_na'] = pd.isna(df['w_last_name_match'])
+
+
+df['m_contact_address_na'] *= 1
+df['w_contact_address_na'] *= 1
+df['m_contact_name_na'] *= 1
+df['w_contact_name_na'] *= 1
+
+
 #one_hot_data = pd.get_dummies(df[['m_is_mailable','m_is_ported', 'w_is_mailable', 'w_is_ported', 'w_is_wireless','m_is_connected','w_is_connected', 'm_days_of_porting_since20180101', 'w_days_of_porting_since20180101','m_contact_quality_score', 'w_contact_quality_score','m_contact_phone_type', 'w_contact_phone_type']], drop_first=True)
 #one_hot_data = pd.get_dummies(df[['m_is_mailable','m_is_ported', 'w_is_mailable', 'w_is_ported', 'w_is_wireless','m_is_connected','w_is_connected', 'm_contact_quality_score', 'w_contact_quality_score','m_contact_phone_type', 'w_contact_phone_type']], drop_first=True)
 one_hot_data = pd.get_dummies(df[['m_is_mailable', 'w_is_mailable',
@@ -23,8 +37,15 @@ one_hot_data = pd.get_dummies(df[['m_is_mailable', 'w_is_mailable',
                                   'm_is_possible_disconnected', 'w_is_possible_disconnected',
                                   'm_is_portable_voip', 'w_is_portable_voip',
                                   'm_is_possible_portable_voip', 'w_is_possible_portable_voip',
-                                  'm_is_contact_address_po_box', 'w_is_contact_address_po_box' 
+                                  'm_is_contact_address_po_box', 'w_is_contact_address_po_box',
+                                  'm_contact_address_match_lev8', 'w_contact_address_match_lev8', 
+                                  'm_contact_address_na', 'w_contact_address_na',
+                                  'm_last_name_match', 'w_last_name_match',
+                                  'm_contact_name_na', 'w_contact_name_na',
+                                  'm_days_of_porting_since20180101', 'w_days_of_porting_since20180101'
                                  ]], drop_first=True)
+
+
 #one_hot_data = pd.get_dummies(df[['m_days_of_porting_since20180101', 'w_days_of_porting_since20180101']], drop_first=True)
 one_hot_data.fillna(one_hot_data.mean())
 estimator = tree.DecisionTreeClassifier()
