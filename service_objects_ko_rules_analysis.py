@@ -4,7 +4,7 @@
 import pandas as pd
 import numpy as np
 
-
+################# get training set, periscope chart KO_SERVICE_OBJECTS_RULES
 df=pd.read_csv('https://app.periscopedata.com/api/creditninja/chart/csv/3904b1fa-1764-5227-87aa-5c4bf1613e71')
 df.head()
 df.drop_duplicates('current_loan_leadid', inplace = True)
@@ -188,25 +188,86 @@ get_ko_rule(estimator, path_515)
 ####################### to validate the potential KO rule on validation set use: ######################################
 #####################################################################################################################
 
-#get another 10000 loans
+
+
+#get first 10000  validation loans, periscope chart KO_SERVICE_OBJECTS_RULES1
+
+decision_list = get_ko_rule(estimator, path_91)
+
+def ko_rule_validation_format(decision_list):
+    decision_list_validation_format = []
+    for i in range(0, len(decision_list) - 1 ):
+        rule = decision_list[i][0]
+        value = 1 - int(decision_list[i][1])
+        decision_list_validation_format += [ (rule, value) ] 
+    for i in range(len(decision_list) -1 , 10 ):
+        decision_list_validation_format += [ (rule, value) ]         
+    return decision_list_validation_format
+
+print(decision_list)
+print(ko_rule_validation_format(decision_list))
+
+
 df_valid = pd.read_csv('https://app.periscopedata.com/api/creditninja/chart/csv/02f7e29a-03e0-89cb-7d4c-e99f9c2d4336')
 df_valid.drop_duplicates('current_loan_leadid', inplace = True)
-
-df_valid=df_valid.fillna(df_valid.mean())
-
-
-#df_valid[ df_valid['m_is_mailable'==1] ]
-n_converted = len(df_valid[ (df_valid['w_is_wireless']==1) &  (df_valid['m_is_connected']==0)
-                   & (df_valid['w_is_mailable']==0)  &  (df_valid['w_contact_phone_type']!='RESIDENTIAL') & (df_valid['w_contact_phone_type']!='UNKNOWN') & (df_valid['w_is_ported']==0) &(df_valid['conversion_flag']==1) ]) 
+# df_valid=df_valid.fillna(df_valid.mean())
+# df_valid[ df_valid['m_is_mailable'==1] ]
 
 
-
-n_diverted = len(df_valid[ (df_valid['w_is_wireless']==1) &  (df_valid['m_is_connected']==0)
-                   & (df_valid['w_is_mailable']==0)  &  (df_valid['w_contact_phone_type']!='RESIDENTIAL') & (df_valid['w_contact_phone_type']!='UNKNOWN')    &(df_valid['w_is_ported']==0) &(df_valid['conversion_flag']==0) ]) 
-
+decision_list_vf = ko_rule_validation_format(decision_list)
+#print( '\n length:', len(df_valid  [ df_valid [decision_list_vf[0][0] ]==decision_list_vf[0][1] ]) )
 
 
-proportion = n_diverted / n_converted
+number_of_converted = len(df_valid[ (df_valid[decision_list_vf[0][0]]==decision_list_vf[0][1]) &  (df_valid[decision_list_vf[1][0]]==decision_list_vf[1][1]  )
+                   & (df_valid[decision_list_vf[2][0]]==decision_list_vf[2][1])  &  (df_valid[decision_list_vf[3][0]]==decision_list_vf[3][1])
+                   & (df_valid[decision_list_vf[4][0]]==decision_list_vf[4][1]) & (df_valid[decision_list_vf[5][0]]==decision_list_vf[5][1])
+                   & (df_valid[decision_list_vf[6][0]]==decision_list_vf[6][1]) &  (df_valid[decision_list_vf[7][0]]==decision_list_vf[7][1])
+                   & (df_valid[decision_list_vf[8][0]]==decision_list_vf[8][1])  &  (df_valid[decision_list_vf[9][0]]==decision_list_vf[9][1])                   
+                   & (df_valid['conversion_flag']==1) ])
+
+print( 'The number of converted: ', number_of_converted)
+
+
+number_of_diverted = len(df_valid[ (df_valid[decision_list_vf[0][0]]==decision_list_vf[0][1]) &  (df_valid[decision_list_vf[1][0]]==decision_list_vf[1][1]  )
+                   & (df_valid[decision_list_vf[2][0]]==decision_list_vf[2][1])  &  (df_valid[decision_list_vf[3][0]]==decision_list_vf[3][1])
+                   & (df_valid[decision_list_vf[4][0]]==decision_list_vf[4][1]) & (df_valid[decision_list_vf[5][0]]==decision_list_vf[5][1])
+                   & (df_valid[decision_list_vf[6][0]]==decision_list_vf[6][1]) &  (df_valid[decision_list_vf[7][0]]==decision_list_vf[7][1])
+                   & (df_valid[decision_list_vf[8][0]]==decision_list_vf[8][1])  &  (df_valid[decision_list_vf[9][0]]==decision_list_vf[9][1])                   
+                   & (df_valid['conversion_flag']==0) ])
+
+
+print( 'The number of diverted: ', number_of_diverted)
+
+
+print ( 'validation proportion:', number_of_diverted/number_of_converted)
+
+
+##### get second validation sample of  10,000 loans, periscope chart KO_SERVICE_OBJECTS_RULES2
+df_valid2 = pd.read_csv('https://app.periscopedata.com/api/creditninja/chart/csv/c734adbd-5c91-bf51-b1d1-2c94a4c48ad2')
+df_valid2.drop_duplicates('current_loan_leadid', inplace = True)
+
+number_of_converted2 = len(df_valid2[ (df_valid2[decision_list_vf[0][0]]==decision_list_vf[0][1]) &  (df_valid2[decision_list_vf[1][0]]==decision_list_vf[1][1]  )
+                   & (df_valid2[decision_list_vf[2][0]]==decision_list_vf[2][1])  &  (df_valid2[decision_list_vf[3][0]]==decision_list_vf[3][1])
+                   & (df_valid2[decision_list_vf[4][0]]==decision_list_vf[4][1]) & (df_valid2[decision_list_vf[5][0]]==decision_list_vf[5][1])
+                   & (df_valid2[decision_list_vf[6][0]]==decision_list_vf[6][1]) &  (df_valid2[decision_list_vf[7][0]]==decision_list_vf[7][1])
+                   & (df_valid2[decision_list_vf[8][0]]==decision_list_vf[8][1])  &  (df_valid2[decision_list_vf[9][0]]==decision_list_vf[9][1])                   
+                   & (df_valid2['conversion_flag']==1) ])
+
+print( 'The number of converted2: ', number_of_converted2)
+
+
+number_of_diverted2 = len(df_valid2[ (df_valid2[decision_list_vf[0][0]]==decision_list_vf[0][1]) &  (df_valid2[decision_list_vf[1][0]]==decision_list_vf[1][1]  )
+                   & (df_valid2[decision_list_vf[2][0]]==decision_list_vf[2][1])  &  (df_valid2[decision_list_vf[3][0]]==decision_list_vf[3][1])
+                   & (df_valid2[decision_list_vf[4][0]]==decision_list_vf[4][1]) & (df_valid2[decision_list_vf[5][0]]==decision_list_vf[5][1])
+                   & (df_valid2[decision_list_vf[6][0]]==decision_list_vf[6][1]) &  (df_valid2[decision_list_vf[7][0]]==decision_list_vf[7][1])
+                   & (df_valid2[decision_list_vf[8][0]]==decision_list_vf[8][1])  &  (df_valid2[decision_list_vf[9][0]]==decision_list_vf[9][1])                   
+                   & (df_valid2['conversion_flag']==0) ])
+
+
+print( 'The number of diverted2: ', number_of_diverted2)
+ 
+
+print ( 'validation proportion 2:', number_of_diverted2/number_of_converted2)
 
 
 # is proportion bigger than prescribed threshold (=4) ?????????????????????????
