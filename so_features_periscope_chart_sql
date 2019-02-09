@@ -3,18 +3,46 @@
 #Needs to output by chunks of 10,000 observations since Periscope doesn't scale
 
 
+
 with lead_universe as (
-select  current_loan_leadid, mobile_phone, home_phone, work_phone from 
---select current_loan_leadid, univ.* from 
+
+select  current_loan_leadid, mobile_phone, home_phone, work_phone, 
+zip::integer as zip_int, long as ld_longtitude, lat as ld_latitude  from 
 analytics.universe_of_ids_for_so as univ
 left outer join [loanid_leadid_connector as conn]
 on univ.infinity_loan_id = conn.loanid
+left outer join leads as ls
+on conn.current_loan_leadid=ls.id
+left outer join zip_code_mapping1 as zm
+on ls.zip = zm.zipcode 
 where current_loan_leadid is not null
-order by current_loan_leadid 
-limit 10000 offset 10000    
-)  
+), 
 
-select mobile_phone, work_phone, home_phone, current_loan_leadid, fpd_flag, conversion_flag,
+so_transformed_zip as (
+select case when len(contactzipout)>0  and substring(contactzipout from 1 for 
+1)!='V' then trim(substring(contactzipout from 1 for 5))::int
+else NULL end as contactzipout_int, *
+from [service_objects_gppl2 as so] 
+ ),  
+
+so_data_and_contact_longt_alt  as (
+  
+select so_tr.*, long as contact_longtitude, lat as contact_latitude from so_transformed_zip as so_tr
+left outer join zip_code_mapping1 as zm on
+so_tr.contactzipout_int = zm.zipcode
+)
+
+select (so_mob.contact_longtitude - ld_longtitude)*(so_mob.contact_longtitude - ld_longtitude) + (so_mob.contact_latitude - ld_latitude)*(so_mob.contact_latitude - ld_latitude) as m_zip_sq_distance, 
+
+(so_work.contact_longtitude - ld_longtitude)*(so_work.contact_longtitude - ld_longtitude) + (so_work.contact_latitude - ld_latitude)*(so_work.contact_latitude - ld_latitude) as w_zip_sq_distance, 
+
+(so_hom.contact_longtitude - ld_longtitude)*(so_hom.contact_longtitude - ld_longtitude) + (so_hom.contact_latitude - ld_latitude)*(so_hom.contact_latitude - ld_latitude) as h_zip_sq_distance, 
+
+so_mob.contact_longtitude as m_longtitude, so_mob.contact_latitude as m_latitude, 
+so_work.contact_longtitude as  w_longtitude, so_work.contact_latitude as w_latitude,
+so_hom.contact_longtitude as h_longtitude, so_hom.contact_latitude as h_latitude,
+ld_longtitude, ld_latitude, 
+mobile_phone, work_phone, home_phone, current_loan_leadid,
   case when (so_mob.notecodes like '%,1,%' or so_mob.notecodes  like '1,%' or so_mob.notecodes='1' or so_mob.notecodes  like '%,1') then 1
        else 0
   end as m_Is_Mailable,
@@ -196,11 +224,10 @@ extract( days from (so_hom.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as h
 from lead_universe 
 left outer join leads as li
 on li.id=lead_universe.current_loan_leadid
-left outer join [leads_performance_all as lp]
-on lp.creditninjaid = lead_universe.current_loan_leadid
-left outer join  [service_objects_gppl2 as so_mob]
+left outer join so_data_and_contact_longt_alt as so_mob
 on lead_universe.mobile_phone = so_mob.phone_number
-left outer join  [service_objects_gppl2 as so_work]
+left outer join so_data_and_contact_longt_alt as so_work
 on lead_universe.work_phone = so_work.phone_number
-left outer join  [service_objects_gppl2 as so_hom]
+left outer join so_data_and_contact_longt_alt as so_hom
 on lead_universe.home_phone = so_hom.phone_number
+limit 10000
