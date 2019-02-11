@@ -2,8 +2,6 @@
 #The output is put as CSV on URL 
 #Needs to output by chunks of 10,000 observations since Periscope doesn't scale
 
-
-
 with lead_universe as (
 
 select  current_loan_leadid, mobile_phone, home_phone, work_phone, 
@@ -21,18 +19,49 @@ where current_loan_leadid is not null
 so_transformed_zip as (
 select case when len(contactzipout)>0  and substring(contactzipout from 1 for 
 1)!='V' then trim(substring(contactzipout from 1 for 5))::int
-else NULL end as contactzipout_int, *
+else NULL end as contactzipout_int, *, 
+regexp_replace(UPPER(providernameout),'-[A-Z][A-Z]|- [A-Z][A-Z]| [A-Z][A-Z]$|CABLE|COM[M]+$| COM[M]+ ','') as providernameout2  
 from [service_objects_gppl2 as so] 
  ),  
 
 so_data_and_contact_longt_alt  as (
-  
+   
 select so_tr.*, long as contact_longtitude, lat as contact_latitude from so_transformed_zip as so_tr
 left outer join zip_code_mapping1 as zm on
 so_tr.contactzipout_int = zm.zipcode
 )
 
-select (so_mob.contact_longtitude - ld_longtitude)*(so_mob.contact_longtitude - ld_longtitude) + (so_mob.contact_latitude - ld_latitude)*(so_mob.contact_latitude - ld_latitude) as m_zip_sq_distance, 
+select 
+
+case when so_mob.providernameout2 like '%CINGULAR%' then 'CINGULAR'
+when so_mob.providernameout2 like '%VERIZON%' then 'VERIZON'
+when so_mob.providernameout2 like '%SPRINT%' then 'SPRINT'
+when so_mob.providernameout2 like '%T-MOBILE%' then 'T-MOBILE'
+when so_mob.providernameout2 like '%TBILE%' then 'T-MOBILE'
+when so_mob.providernameout2 like '%METRO%PCS%' then 'METRO_PCS'
+when so_mob.providernameout2 like '%CELL ONE%' then 'CELL_ONE'
+when so_mob.providernameout2 like '%AERIAL%' then 'AERIAL'
+when so_mob.providernameout2 like '%POWERTEL%' then 'POWERTEL'
+when so_mob.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
+when so_mob.providernameout2 like 'AT&T%' then 'AT&T'
+when so_mob.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
+else 'OTHER' end as m_pn2,
+
+case when so_work.providernameout2 like '%CINGULAR%' then 'CINGULAR'
+when so_work.providernameout2 like '%VERIZON%' then 'VERIZON'
+when so_work.providernameout2 like '%SPRINT%' then 'SPRINT'
+when so_work.providernameout2 like '%T-MOBILE%' then 'T-MOBILE'
+when so_work.providernameout2 like '%TBILE%' then 'T-MOBILE'
+when so_work.providernameout2 like '%METRO%PCS%' then 'METRO_PCS'
+when so_work.providernameout2 like '%CELL ONE%' then 'CELL_ONE'
+when so_work.providernameout2 like '%AERIAL%' then 'AERIAL'
+when so_work.providernameout2 like '%POWERTEL%' then 'POWERTEL'
+when so_work.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
+when so_work.providernameout2 like 'AT&T%' then 'AT&T'
+when so_work.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
+else 'OTHER' end as w_pn2,
+
+(so_mob.contact_longtitude - ld_longtitude)*(so_mob.contact_longtitude - ld_longtitude) + (so_mob.contact_latitude - ld_latitude)*(so_mob.contact_latitude - ld_latitude) as m_zip_sq_distance, 
 
 (so_work.contact_longtitude - ld_longtitude)*(so_work.contact_longtitude - ld_longtitude) + (so_work.contact_latitude - ld_latitude)*(so_work.contact_latitude - ld_latitude) as w_zip_sq_distance, 
 
@@ -231,3 +260,4 @@ on lead_universe.work_phone = so_work.phone_number
 left outer join so_data_and_contact_longt_alt as so_hom
 on lead_universe.home_phone = so_hom.phone_number
 limit 10000
+
