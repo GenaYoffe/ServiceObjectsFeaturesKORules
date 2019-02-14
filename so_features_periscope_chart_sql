@@ -2,18 +2,30 @@
 #The output is put as CSV on URL 
 #Needs to output by chunks of 10,000 observations since Periscope doesn't scale
 
-with lead_universe as (
+with  leads_without_dups_with_counts as (
+select count(*) as cnt, current_loan_leadid from 
+analytics.universe_of_ids_for_so as univ
+left outer join [loanid_leadid_connector as conn]
+on univ.infinity_loan_id = conn.loanid
+group by current_loan_leadid
+having cnt<2
+) ,
 
-select  current_loan_leadid, mobile_phone, home_phone, work_phone, 
+lead_universe as (
+
+select  current_loan_leadid, mobile_phone, home_phone, work_phone, lw.created, 
 zip::integer as zip_int, long as ld_longtitude, lat as ld_latitude  from 
 analytics.universe_of_ids_for_so as univ
 left outer join [loanid_leadid_connector as conn]
 on univ.infinity_loan_id = conn.loanid
+left outer join loans_view as lw
+on univ.infinity_loan_id = lw.id
 left outer join leads as ls
 on conn.current_loan_leadid=ls.id
 left outer join zip_code_mapping1 as zm
 on ls.zip = zm.zipcode 
-where current_loan_leadid is not null
+where current_loan_leadid is not null  and current_loan_leadid in ( select current_loan_leadid from leads_without_dups_with_counts   )
+  
 ), 
 
 so_transformed_zip as (
@@ -33,6 +45,9 @@ so_tr.contactzipout_int = zm.zipcode
 
 select 
 
+len(upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) as len_of_name_in_leads,
+len(li.address) as len_of_address_in_leads,
+
 case when so_mob.providernameout2 like '%CINGULAR%' then 'CINGULAR'
 when so_mob.providernameout2 like '%VERIZON%' then 'VERIZON'
 when so_mob.providernameout2 like '%SPRINT%' then 'SPRINT'
@@ -45,7 +60,7 @@ when so_mob.providernameout2 like '%POWERTEL%' then 'POWERTEL'
 when so_mob.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
 when so_mob.providernameout2 like 'AT&T%' then 'AT&T'
 when so_mob.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
-else 'OTHER' end as m_pn2,
+else 'OTHER' end as m_provider_name,
 
 case when so_work.providernameout2 like '%CINGULAR%' then 'CINGULAR'
 when so_work.providernameout2 like '%VERIZON%' then 'VERIZON'
@@ -59,18 +74,55 @@ when so_work.providernameout2 like '%POWERTEL%' then 'POWERTEL'
 when so_work.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
 when so_work.providernameout2 like 'AT&T%' then 'AT&T'
 when so_work.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
-else 'OTHER' end as w_pn2,
+else 'OTHER' end as w_provider_name,
 
-(so_mob.contact_longtitude - ld_longtitude)*(so_mob.contact_longtitude - ld_longtitude) + (so_mob.contact_latitude - ld_latitude)*(so_mob.contact_latitude - ld_latitude) as m_zip_sq_distance, 
+case when so_hom.providernameout2 like '%CINGULAR%' then 'CINGULAR'
+when so_hom.providernameout2 like '%VERIZON%' then 'VERIZON'
+when so_hom.providernameout2 like '%SPRINT%' then 'SPRINT'
+when so_hom.providernameout2 like '%T-MOBILE%' then 'T-MOBILE'
+when so_hom.providernameout2 like '%TBILE%' then 'T-MOBILE'
+when so_hom.providernameout2 like '%METRO%PCS%' then 'METRO_PCS'
+when so_hom.providernameout2 like '%CELL ONE%' then 'CELL_ONE'
+when so_hom.providernameout2 like '%AERIAL%' then 'AERIAL'
+when so_hom.providernameout2 like '%POWERTEL%' then 'POWERTEL'
+when so_hom.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
+when so_hom.providernameout2 like 'AT&T%' then 'AT&T'
+when so_hom.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
+else 'OTHER' end as h_provider_name,
 
-(so_work.contact_longtitude - ld_longtitude)*(so_work.contact_longtitude - ld_longtitude) + (so_work.contact_latitude - ld_latitude)*(so_work.contact_latitude - ld_latitude) as w_zip_sq_distance, 
 
-(so_hom.contact_longtitude - ld_longtitude)*(so_hom.contact_longtitude - ld_longtitude) + (so_hom.contact_latitude - ld_latitude)*(so_hom.contact_latitude - ld_latitude) as h_zip_sq_distance, 
+ 2 * 3961 * asin(sqrt((sin(radians((so_mob.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_mob.contact_latitude)) * (sin(radians((so_mob.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as m_zip_haversine_distance,
 
-so_mob.contact_longtitude as m_longtitude, so_mob.contact_latitude as m_latitude, 
-so_work.contact_longtitude as  w_longtitude, so_work.contact_latitude as w_latitude,
-so_hom.contact_longtitude as h_longtitude, so_hom.contact_latitude as h_latitude,
-ld_longtitude, ld_latitude, 
+ 2 * 3961 * asin(sqrt((sin(radians((so_work.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_work.contact_latitude)) * (sin(radians((so_work.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as w_zip_haversine_distance,
+
+ 2 * 3961 * asin(sqrt((sin(radians((so_hom.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_hom.contact_latitude)) * (sin(radians((so_hom.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as h_zip_haversine_distance,
+
+-- so_mob.contact_longtitude as m_longtitude, so_mob.contact_latitude as m_latitude, 
+-- so_work.contact_longtitude as  w_longtitude, so_work.contact_latitude as w_latitude,
+-- so_hom.contact_longtitude as h_longtitude, so_hom.contact_latitude as h_latitude,
+-- ld_longtitude, ld_latitude, 
+
+case when length(mobile_phone)>= 10 and length(work_phone)>=10 and substring(mobile_phone from 1 for 3) = substring(work_phone from 1 for 3) then 1
+     when length(mobile_phone)>= 10 and length(work_phone)>=10 and substring(mobile_phone from 1 for 3) != substring(work_phone from 1 for 3) then 0
+  else null
+end as m_w_area_match,
+
+case when length(mobile_phone)>= 10 and length(home_phone)>=10 and substring(mobile_phone from 1 for 3) = substring(home_phone from 1 for 3) then 1
+     when length(mobile_phone)>= 10 and length(home_phone)>=10 and substring(mobile_phone from 1 for 3) != substring(home_phone from 1 for 3) then 0
+  else null
+end as m_h_area_match,
+
+case when length(work_phone)>= 10 and length(home_phone)>=10 and substring(work_phone from 1 for 3) = substring(home_phone from 1 for 3) then 1
+     when length(work_phone)>= 10 and length(home_phone)>= 10 and substring(work_phone from 1 for 3) != substring(home_phone from 1 for 3) then 0
+  else null
+end as w_h_area_match,
+
+case when length(mobile_phone)>= 10 and length(work_phone)>= 10 and length(home_phone)>=10 and substring(work_phone from 1 for 3) = substring(home_phone from 1 for 3) and substring(mobile_phone from 1 for 3) = substring(home_phone from 1 for 3) then 1
+     when length(mobile_phone)>= 10 and length(work_phone)>= 10 and length(home_phone)>= 10 and ( substring(work_phone from 1 for 3) != substring(home_phone from 1 for 3) or substring(mobile_phone from 1 for 3) != substring(home_phone from 1 for 3)  ) then 0
+  else null
+end as m_w_h_area_match,
+
+
 mobile_phone, work_phone, home_phone, current_loan_leadid,
   case when (so_mob.notecodes like '%,1,%' or so_mob.notecodes  like '1,%' or so_mob.notecodes='1' or so_mob.notecodes  like '%,1') then 1
        else 0
@@ -105,7 +157,7 @@ mobile_phone, work_phone, home_phone, current_loan_leadid,
 
 case when so_mob.contactaddressout like '%PO BOX%' then 1
      when so_mob.contactaddressout is not null and len(so_mob.contactaddressout)>0 and so_mob.contactaddressout not like '%PO BOX%' then 0
-  end as m_is_contact_address_po_box, so_mob.contactaddressout  as mob_contactaddressout,
+  end as m_is_contact_address_po_box, 
 
 case when levenshtein(so_mob.contactaddressout, upper(li.address)) < 8 then 1
     when so_mob.contactaddressout is not null and len(so_mob.contactaddressout)>0 and levenshtein(so_mob.contactaddressout, upper(li.address)) >= 8 then 0 end as m_contact_address_match_lev8,
@@ -133,7 +185,7 @@ as m_last_name_match,
 
 so_mob.contactqualityscore as m_contact_quality_score,
 so_mob.contactphonetype as m_contact_phone_type,
-extract( days from (so_mob.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as m_days_of_porting_since20180101,
+extract( days from (so_mob.dateofporting - lead_universe.created ) ) as m_days_of_porting_since_in_infinity,
 
   case when (so_work.notecodes like '%,1,%' or so_work.notecodes  like '1,%' or so_work.notecodes='1' or so_work.notecodes  like '%,1') then 1
        else 0
@@ -168,7 +220,7 @@ extract( days from (so_mob.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as m
 
 case when so_work.contactaddressout like '%PO BOX%' then 1
      when so_work.contactaddressout is not null and len(so_work.contactaddressout)>0 and so_work.contactaddressout not like '%PO BOX%' then 0
-  end as w_is_contact_address_po_box, so_work.contactaddressout  as work_contactaddressout,
+  end as w_is_contact_address_po_box, 
 
 case when levenshtein(so_work.contactaddressout, upper(li.address)) < 8 then 1
    when so_work.contactaddressout is not null and len(so_work.contactaddressout)>0 and levenshtein(so_work.contactaddressout, upper(li.address)) >= 8 then 0 end as w_contact_address_match_lev8,
@@ -196,7 +248,7 @@ as w_last_name_match,
 
 so_work.contactqualityscore as w_contact_quality_score,
 so_work.contactphonetype as w_contact_phone_type,
-extract( days from (so_work.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as w_days_of_porting_since20180101,
+extract( days from (so_work.dateofporting - lead_universe.created ) ) as w_days_of_porting_since_in_infinity,
 
   case when (so_hom.notecodes like '%,1,%' or so_hom.notecodes  like '1,%' or so_hom.notecodes='1' or so_hom.notecodes  like '%,1') then 1
        else 0
@@ -231,7 +283,7 @@ extract( days from (so_work.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as 
 
 case when so_hom.contactaddressout like '%PO BOX%' then 1
      when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 and so_hom.contactaddressout not like '%PO BOX%' then 0
-  end as h_is_contact_address_po_box, so_hom.contactaddressout as hom_contactaddressout,
+  end as h_is_contact_address_po_box, 
 
 case when levenshtein(so_hom.contactaddressout, upper(li.address)) < 8 then 1
   when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 and levenshtein(so_hom.contactaddressout, upper(li.address)) >= 8 then 0 end as h_contact_address_match_lev8,
@@ -247,8 +299,15 @@ case when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)
 
 so_hom.contactqualityscore as h_contact_quality_score,
 so_hom.contactphonetype as h_contact_phone_type,
-extract( days from (so_hom.dateofporting - to_date('1/1/18','MM/DD/YY') ) ) as h_days_of_porting_since20180101
+extract( days from (so_hom.dateofporting - lead_universe.created ) ) as h_days_of_porting_since_in_infinity
 
+-- make a view  instead of chart
+-- Haversine distance (should be in SQL)
+-- Provider zipcode distance from zipcode's 
+-- area (312,773) match indicator, all three match (4 vars)
+-- lead id correct to get
+-- len of lead address, len of combined first and last name
+-- days since ported from signature date
 
 from lead_universe 
 left outer join leads as li
@@ -259,5 +318,4 @@ left outer join so_data_and_contact_longt_alt as so_work
 on lead_universe.work_phone = so_work.phone_number
 left outer join so_data_and_contact_longt_alt as so_hom
 on lead_universe.home_phone = so_hom.phone_number
-limit 10000
-
+order by current_loan_leadid  limit 10000 offset 40000
