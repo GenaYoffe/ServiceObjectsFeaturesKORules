@@ -60,21 +60,38 @@ when so_mob.providernameout2 like '%POWERTEL%' then 'POWERTEL'
 when so_mob.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
 when so_mob.providernameout2 like 'AT&T%' then 'AT&T'
 when so_mob.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
-else 'OTHER' end as m_provider_name,
+when so_mob.providernameout2 is not null and so_mob.providernameout2 not like '%CINGULAR%' 
+                              and so_mob.providernameout2 not like '%VERIZON%' and so_mob.providernameout2 not like '%SPRINT%' and so_mob.providernameout2 not like '%T-MOBILE%'
+                              and so_mob.providernameout2 not like '%TBILE%' and so_mob.providernameout2 not like '%METRO%PCS%' and so_mob.providernameout2 not like '%CELL ONE%'
+                              and so_mob.providernameout2 not like '%AERIAL%' and so_mob.providernameout2 not like '%POWERTEL%' and so_mob.providernameout2 not like '%UNITED STATES CEL%'
+                              and so_mob.providernameout2 not like '%AT&T%' and so_mob.providernameout2 not like '%OMNIPOINT%'  
+                              then 'OTHER'
+else null end as m_provider_name,
 
-case when so_work.providernameout2 like '%CINGULAR%' then 'CINGULAR'
+case when so_work.providernameout2 like '%SERVICE%MANAGEMENT%' then 'SERV_MNGM'
+when so_work.providernameout2 like '%BELL%' then 'BELL'
+when so_work.providernameout2 like '%QWEST%' then 'QWEST'
+when so_work.providernameout2 like '%LEVEL%3' then 'LEVEL3'
+when so_work.providernameout2 like '%EPORT%' then 'EPORT'
+when so_work.providernameout2 like '%CENTURYLINK%' then 'CENTURY'
+when so_work.providernameout2 like '%BANDWIDTH%' then 'BANDWIDTH'
+when so_work.providernameout2 like '%FIBERLINK%' then 'FIBERLINK'
+when so_work.providernameout2 like '%TIME%WARNER%' then 'TIME_WRNR'
 when so_work.providernameout2 like '%VERIZON%' then 'VERIZON'
 when so_work.providernameout2 like '%SPRINT%' then 'SPRINT'
 when so_work.providernameout2 like '%T-MOBILE%' then 'T-MOBILE'
 when so_work.providernameout2 like '%TBILE%' then 'T-MOBILE'
-when so_work.providernameout2 like '%METRO%PCS%' then 'METRO_PCS'
-when so_work.providernameout2 like '%CELL ONE%' then 'CELL_ONE'
-when so_work.providernameout2 like '%AERIAL%' then 'AERIAL'
-when so_work.providernameout2 like '%POWERTEL%' then 'POWERTEL'
-when so_work.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
-when so_work.providernameout2 like 'AT&T%' then 'AT&T'
-when so_work.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
-else 'OTHER' end as w_provider_name,
+when so_work.providernameout2 like '%COMCAST%' then 'COMCAST'
+when so_work.providernameout2 like '%CINGULAR%' then 'CINGULAR'
+when so_work.providernameout2 is not null and so_work.providernameout2 not like '%SERVICE%MANAGEMENT%' 
+                              and so_work.providernameout2 not like '%BELL%' and so_work.providernameout2 not like '%QWEST%' and so_work.providernameout2 not like '%LEVEL%3%'
+                              and so_work.providernameout2 not like '%EPORT%' and so_work.providernameout2 not like '%CENTURYLINK%' and so_work.providernameout2 not like '%BANDWIDTH%'
+                              and so_work.providernameout2 not like '%FIBERLINK%' and so_work.providernameout2 not like '%TIME%WARNER%' and so_work.providernameout2 not like '%VERIZON%'
+                              and so_work.providernameout2 not like '%SPRINT%' and so_work.providernameout2 not like '%T-MOBILE%' and so_work.providernameout2 not like '%TBILE%'
+                              and so_work.providernameout2 not like '%COMCAST%' and so_work.providernameout2 not like '%CINGULAR%' 
+                              then 'OTHER'
+else null end as w_provider_name,
+
 
 case when so_hom.providernameout2 like '%CINGULAR%' then 'CINGULAR'
 when so_hom.providernameout2 like '%VERIZON%' then 'VERIZON'
@@ -86,9 +103,37 @@ when so_hom.providernameout2 like '%CELL ONE%' then 'CELL_ONE'
 when so_hom.providernameout2 like '%AERIAL%' then 'AERIAL'
 when so_hom.providernameout2 like '%POWERTEL%' then 'POWERTEL'
 when so_hom.providernameout2 like '%UNITED STATES CEL%' then 'US_CEL'
-when so_hom.providernameout2 like 'AT&T%' then 'AT&T'
+when so_hom.providernameout2 like '%AT&T%' then 'AT&T'
 when so_hom.providernameout2 like 'OMNIPOINT%' then 'OMNIPOINT'
-else 'OTHER' end as h_provider_name,
+when so_hom.providernameout2 is not null and so_hom.providernameout2 not like '%CINGULAR%' 
+                              and so_hom.providernameout2 not like '%VERIZON%' and so_hom.providernameout2 not like '%SPRINT%' and so_hom.providernameout2 not like '%T-MOBILE%'
+                              and so_hom.providernameout2 not like '%TBILE%' and so_hom.providernameout2 not like '%METRO%PCS%' and so_hom.providernameout2 not like '%CELL ONE%'
+                              and so_hom.providernameout2 not like '%AERIAL%' and so_hom.providernameout2 not like '%POWERTEL%' and so_hom.providernameout2 not like '%UNITED STATES CEL%'
+                              and so_hom.providernameout2 not like '%AT&T%' and so_hom.providernameout2 not like '%OMNIPOINT%'  
+                              then 'OTHER'
+else null end as h_provider_name,
+
+
+case when length(mobile_phone)>= 10 and length(work_phone)>=10 and mobile_phone=work_phone then 1
+     when length(mobile_phone)>= 10 and length(work_phone)>=10 and mobile_phone != work_phone then 0
+  else null
+end as m_w_phone_match,
+
+case when length(mobile_phone) >= 10 and length(home_phone)>=10 and mobile_phone  = home_phone then 1
+     when length(mobile_phone)>= 10 and length(home_phone)>=10 and mobile_phone != home_phone then 0
+  else null
+end as m_h_phone_match,
+
+case when length(work_phone)>= 10 and length(home_phone)>=10 and work_phone  = home_phone then 1
+     when length(work_phone)>= 10 and length(home_phone)>= 10 and work_phone != home_phone then 0
+  else null
+end as w_h_phone_match,
+
+case when length(mobile_phone)>= 10 and length(work_phone)>= 10 and length(home_phone)>=10 and work_phone = home_phone and mobile_phone  = home_phone then 1
+     when length(mobile_phone)>= 10 and length(work_phone)>= 10 and length(home_phone)>= 10 and ( work_phone != home_phone or mobile_phone!= home_phone ) then 0
+  else null
+end as m_w_h_phone_match,
+
 
 
  2 * 3961 * asin(sqrt((sin(radians((so_mob.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_mob.contact_latitude)) * (sin(radians((so_mob.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as m_zip_haversine_distance,
@@ -318,4 +363,4 @@ left outer join so_data_and_contact_longt_alt as so_work
 on lead_universe.work_phone = so_work.phone_number
 left outer join so_data_and_contact_longt_alt as so_hom
 on lead_universe.home_phone = so_hom.phone_number
-order by current_loan_leadid  limit 10000 offset 40000
+order by current_loan_leadid  limit 10000 offset 20000
