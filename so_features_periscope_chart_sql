@@ -64,14 +64,14 @@ when so_mob.providernameout2 is not null and so_mob.providernameout2 not like '%
                               and so_mob.providernameout2 not like '%VERIZON%' and so_mob.providernameout2 not like '%SPRINT%' and so_mob.providernameout2 not like '%T-MOBILE%'
                               and so_mob.providernameout2 not like '%TBILE%' and so_mob.providernameout2 not like '%METRO%PCS%' and so_mob.providernameout2 not like '%CELL ONE%'
                               and so_mob.providernameout2 not like '%AERIAL%' and so_mob.providernameout2 not like '%POWERTEL%' and so_mob.providernameout2 not like '%UNITED STATES CEL%'
-                              and so_mob.providernameout2 not like '%AT&T%' and so_mob.providernameout2 not like '%OMNIPOINT%'  
+                              and so_mob.providernameout2 not like '%AT&T%' and so_mob.providernameout2 not like '%OMNIPOINT%' and  length(so_mob.providernameout2) > 0 
                               then 'OTHER'
 else null end as m_provider_name,
 
 case when so_work.providernameout2 like '%SERVICE%MANAGEMENT%' then 'SERV_MNGM'
 when so_work.providernameout2 like '%BELL%' then 'BELL'
 when so_work.providernameout2 like '%QWEST%' then 'QWEST'
-when so_work.providernameout2 like '%LEVEL%3' then 'LEVEL3'
+when so_work.providernameout2 like '%LEVEL%3%' then 'LEVEL3'
 when so_work.providernameout2 like '%EPORT%' then 'EPORT'
 when so_work.providernameout2 like '%CENTURYLINK%' then 'CENTURY'
 when so_work.providernameout2 like '%BANDWIDTH%' then 'BANDWIDTH'
@@ -88,7 +88,7 @@ when so_work.providernameout2 is not null and so_work.providernameout2 not like 
                               and so_work.providernameout2 not like '%EPORT%' and so_work.providernameout2 not like '%CENTURYLINK%' and so_work.providernameout2 not like '%BANDWIDTH%'
                               and so_work.providernameout2 not like '%FIBERLINK%' and so_work.providernameout2 not like '%TIME%WARNER%' and so_work.providernameout2 not like '%VERIZON%'
                               and so_work.providernameout2 not like '%SPRINT%' and so_work.providernameout2 not like '%T-MOBILE%' and so_work.providernameout2 not like '%TBILE%'
-                              and so_work.providernameout2 not like '%COMCAST%' and so_work.providernameout2 not like '%CINGULAR%' 
+                              and so_work.providernameout2 not like '%COMCAST%' and so_work.providernameout2 not like '%CINGULAR%' and length(so_work.providernameout2) > 0
                               then 'OTHER'
 else null end as w_provider_name,
 
@@ -109,9 +109,20 @@ when so_hom.providernameout2 is not null and so_hom.providernameout2 not like '%
                               and so_hom.providernameout2 not like '%VERIZON%' and so_hom.providernameout2 not like '%SPRINT%' and so_hom.providernameout2 not like '%T-MOBILE%'
                               and so_hom.providernameout2 not like '%TBILE%' and so_hom.providernameout2 not like '%METRO%PCS%' and so_hom.providernameout2 not like '%CELL ONE%'
                               and so_hom.providernameout2 not like '%AERIAL%' and so_hom.providernameout2 not like '%POWERTEL%' and so_hom.providernameout2 not like '%UNITED STATES CEL%'
-                              and so_hom.providernameout2 not like '%AT&T%' and so_hom.providernameout2 not like '%OMNIPOINT%'  
+                              and so_hom.providernameout2 not like '%AT&T%' and so_hom.providernameout2 not like '%OMNIPOINT%'  and length(so_hom.providernameout2) > 0
                               then 'OTHER'
 else null end as h_provider_name,
+
+ 2 * 3961 * asin(sqrt((sin(radians((so_mob.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_mob.contact_latitude)) * (sin(radians((so_mob.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as m_zip_haversine_distance,
+
+ 2 * 3961 * asin(sqrt((sin(radians((so_work.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_work.contact_latitude)) * (sin(radians((so_work.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as w_zip_haversine_distance,
+
+ 2 * 3961 * asin(sqrt((sin(radians((so_hom.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_hom.contact_latitude)) * (sin(radians((so_hom.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as h_zip_haversine_distance,
+
+-- so_mob.contact_longtitude as m_longtitude, so_mob.contact_latitude as m_latitude, 
+-- so_work.contact_longtitude as  w_longtitude, so_work.contact_latitude as w_latitude,
+-- so_hom.contact_longtitude as h_longtitude, so_hom.contact_latitude as h_latitude,
+-- ld_longtitude, ld_latitude, 
 
 
 case when length(mobile_phone)>= 10 and length(work_phone)>=10 and mobile_phone=work_phone then 1
@@ -135,18 +146,6 @@ case when length(mobile_phone)>= 10 and length(work_phone)>= 10 and length(home_
 end as m_w_h_phone_match,
 
 
-
- 2 * 3961 * asin(sqrt((sin(radians((so_mob.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_mob.contact_latitude)) * (sin(radians((so_mob.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as m_zip_haversine_distance,
-
- 2 * 3961 * asin(sqrt((sin(radians((so_work.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_work.contact_latitude)) * (sin(radians((so_work.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as w_zip_haversine_distance,
-
- 2 * 3961 * asin(sqrt((sin(radians((so_hom.contact_latitude - ld_latitude) / 2))) ^ 2 + cos(radians(ld_latitude)) * cos(radians(so_hom.contact_latitude)) * (sin(radians((so_hom.contact_longtitude - ld_longtitude) / 2))) ^ 2)) as h_zip_haversine_distance,
-
--- so_mob.contact_longtitude as m_longtitude, so_mob.contact_latitude as m_latitude, 
--- so_work.contact_longtitude as  w_longtitude, so_work.contact_latitude as w_latitude,
--- so_hom.contact_longtitude as h_longtitude, so_hom.contact_latitude as h_latitude,
--- ld_longtitude, ld_latitude, 
-
 case when length(mobile_phone)>= 10 and length(work_phone)>=10 and substring(mobile_phone from 1 for 3) = substring(work_phone from 1 for 3) then 1
      when length(mobile_phone)>= 10 and length(work_phone)>=10 and substring(mobile_phone from 1 for 3) != substring(work_phone from 1 for 3) then 0
   else null
@@ -167,37 +166,61 @@ case when length(mobile_phone)>= 10 and length(work_phone)>= 10 and length(home_
   else null
 end as m_w_h_area_match,
 
+ case when so_mob.tokensused = '5' then 'p5'
+      when so_mob.tokensused = '35' then 'p35'
+      when so_mob.tokensused = '65' then 'p65'
+      when so_mob.tokensused = '95' then 'p95'
+      when so_mob.tokensused = '115' then 'p115'
+ else  null
+ end as m_tokens_used, 
+
+ case when upper(so_mob.errors) like "%NOT VALID%" then 'not_valid'
+      when upper(so_mob.errors) like "%PROVIDE_A_VALID%" then 'provide_valid'
+      when  so_mob.errors is not null and length(so_mob.errors) > 0 and
+            upper(so_mob.errors) not like "%NOT VALID%" and upper(so_mob.errors)               not like "%PROVIDE_A_VALID%" then 'other'
+      else null
+ end as m_errors,
 
 mobile_phone, work_phone, home_phone, current_loan_leadid,
   case when (so_mob.notecodes like '%,1,%' or so_mob.notecodes  like '1,%' or so_mob.notecodes='1' or so_mob.notecodes  like '%,1') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,1,%' and so_mob.notecodes  not like '1,%' and so_mob.notecodes!='1' and so_mob.notecodes  not like '%,1') then 0
+       else null
   end as m_Is_Mailable,
   case when (so_mob.notecodes like '%,2,%' or so_mob.notecodes  like '2,%' or so_mob.notecodes='2' or so_mob.notecodes  like '%,2') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,2,%' and so_mob.notecodes  not like '2,%' and so_mob.notecodes!='2' and so_mob.notecodes  not like '%,2') then 0
+       else null
   end as m_Is_Connected,
   case when (so_mob.notecodes like '%,3,%' or so_mob.notecodes  like '3,%' or so_mob.notecodes='3' or so_mob.notecodes  like '%,3') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,3,%' and so_mob.notecodes  not like '3,%' and so_mob.notecodes!='3' and so_mob.notecodes  not like '%,3') then 0
+       else null
   end as m_Is_Ported,
   case when (so_mob.notecodes like '%,4,%' or so_mob.notecodes  like '4,%' or so_mob.notecodes='4' or so_mob.notecodes  like '%,4') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,4,%' and so_mob.notecodes  not like '4,%' and so_mob.notecodes!='4' and so_mob.notecodes  not like '%,4') then 0
+       else null
   end as m_Is_Wireless,
   case when (so_mob.notecodes like '%,5,%' or so_mob.notecodes  like '5,%' or so_mob.notecodes='5' or so_mob.notecodes  like '%,5') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,5,%' and so_mob.notecodes  not like '5,%' and so_mob.notecodes!='5' and so_mob.notecodes  not like '%,5') then 0
+       else null
   end as m_Is_Unknown_Contact,
   case when (so_mob.notecodes like '%,7,%' or so_mob.notecodes  like '7,%' or so_mob.notecodes='7' or so_mob.notecodes  like '%,7') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,7,%' and so_mob.notecodes  not like '7,%' and so_mob.notecodes!='7' and so_mob.notecodes  not like '%,7') then 0
+       else null
   end as m_Is_Toll_Free_Number,
   case when (so_mob.notecodes like '%,8,%' or so_mob.notecodes  like '8,%' or so_mob.notecodes='8' or so_mob.notecodes  like '%,8') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,8,%' and so_mob.notecodes  not like '8,%' and so_mob.notecodes!='8' and so_mob.notecodes  not like '%,8') then 0
+       else null
   end as m_Is_Google_Voice_Number,
   case when (so_mob.notecodes like '%,10,%' or so_mob.notecodes  like '10,%' or so_mob.notecodes='10' or so_mob.notecodes  like '%,10') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,10,%' and so_mob.notecodes  not like '10,%' and so_mob.notecodes!='10' and so_mob.notecodes  not like '%,10') then 0
+       else null
   end as m_Is_Possible_Disconnected,
   case when (so_mob.notecodes like '%,11,%' or so_mob.notecodes  like '11,%' or so_mob.notecodes='11' or so_mob.notecodes  like '%,11') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,11,%' and so_mob.notecodes  not like '11,%' and so_mob.notecodes!='11' and so_mob.notecodes  not like '%,11') then 0
+       else null
   end as m_Is_Portable_Voip,
   case when (so_mob.notecodes like '%,12,%' or so_mob.notecodes  like '12,%' or so_mob.notecodes='12' or so_mob.notecodes  like '%,12') then 1
-       else 0
+       when  (so_mob.notecodes is not null and length(so_mob.notecodes) > 0 and so_mob.notecodes not like '%,12,%' and so_mob.notecodes  not like '12,%' and so_mob.notecodes!='12' and so_mob.notecodes  not like '%,12') then 0
+       else null
   end as m_Is_Possible_Portable_Voip,
 
 case when so_mob.contactaddressout like '%PO BOX%' then 1
@@ -218,12 +241,23 @@ else null end as m_cont_addr_lev_dist_ratio,
   
 case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then levenshtein( upper(trim(so_mob.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) 
 else null end as m_cont_name_lev_dist,
+
+case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then least( levenshtein( upper(trim(so_mob.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname))), levenshtein( upper(trim(so_mob.contactnameout)),  upper(trim(li.lname))   || ' ' || upper(trim(li.fname)) ) )
+else null end as m_cont_name_better_perm_lev_dist,
+
 case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then 
   len(so_mob.contactnameout) 
 else null end as m_cont_name_len,
+
 case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then 
     (levenshtein( upper(trim(so_mob.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname)) ))::float/greatest(len(upper(trim(so_mob.contactnameout)) ), len(upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) )
 else null end as m_cont_name_lev_dist_ratio, 
+
+case when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0 then 
+    least ( (levenshtein( upper(trim(so_mob.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname)) )),  levenshtein( upper(trim(so_mob.contactnameout)),  upper(trim(li.lname))   || ' ' || upper(trim(li.fname)))) ::float/ greatest(len(upper(trim(so_mob.contactnameout)) ), len(upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) )
+else null end as m_cont_name_better_perm_lev_dist_ratio, 
+
+
 case when position( upper(trim(li.lname)) in upper(trim(so_mob.contactnameout)) ) > 0 then 1
      when so_mob.contactnameout is not null and len(so_mob.contactnameout)>0  and position( upper(trim(li.lname)) in upper(trim(so_mob.contactnameout)) ) = 0 then 0 end
 as m_last_name_match,
@@ -232,35 +266,60 @@ so_mob.contactqualityscore as m_contact_quality_score,
 so_mob.contactphonetype as m_contact_phone_type,
 extract( days from (so_mob.dateofporting - lead_universe.created ) ) as m_days_of_porting_since_in_infinity,
 
+ case when so_work.tokensused = '5' then 'p5'
+      when so_work.tokensused = '35' then 'p35'
+      when so_work.tokensused = '65' then 'p65'
+      when so_work.tokensused = '95' then 'p95'
+      when so_work.tokensused = '115' then 'p115'
+ else  null
+ end as w_tokens_used, 
+
+ case when upper(so_work.errors) like "%NOT VALID%" then 'not_valid'
+      when upper(so_work.errors) like "%PROVIDE_A_VALID%" then 'provide_valid'
+      when  so_work.errors is not null and length(so_work.errors) > 0 and
+            upper(so_work.errors) not like "%NOT VALID%" and upper(so_work.errors)               not like "%PROVIDE_A_VALID%" then 'other'
+      else null
+ end as w_errors,
+
   case when (so_work.notecodes like '%,1,%' or so_work.notecodes  like '1,%' or so_work.notecodes='1' or so_work.notecodes  like '%,1') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,1,%' and so_work.notecodes  not like '1,%' and so_work.notecodes!='1' and so_work.notecodes  not like '%,1') then 0
+       else null
   end as w_Is_Mailable,
   case when (so_work.notecodes like '%,2,%' or so_work.notecodes  like '2,%' or so_work.notecodes='2' or so_work.notecodes  like '%,2') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,2,%' and so_work.notecodes  not like '2,%' and so_work.notecodes!='2' and so_work.notecodes  not like '%,2') then 0
+       else null
   end as w_Is_Connected,
   case when (so_work.notecodes like '%,3,%' or so_work.notecodes  like '3,%' or so_work.notecodes='3' or so_work.notecodes  like '%,3') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,3,%' and so_work.notecodes  not like '3,%' and so_work.notecodes!='3' and so_work.notecodes  not like '%,3') then 0
+       else null
   end as w_Is_Ported,
   case when (so_work.notecodes like '%,4,%' or so_work.notecodes  like '4,%' or so_work.notecodes='4' or so_work.notecodes  like '%,4') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,4,%' and so_work.notecodes  not like '4,%' and so_work.notecodes!='4' and so_work.notecodes  not like '%,4') then 0
+       else null
   end as w_Is_Wireless,
   case when (so_work.notecodes like '%,5,%' or so_work.notecodes  like '5,%' or so_work.notecodes='5' or so_work.notecodes  like '%,5') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,5,%' and so_work.notecodes  not like '5,%' and so_work.notecodes!='5' and so_work.notecodes  not like '%,5') then 0
+       else null
   end as w_Is_Unknown_Contact,
   case when (so_work.notecodes like '%,7,%' or so_work.notecodes  like '7,%' or so_work.notecodes='7' or so_work.notecodes  like '%,7') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,7,%' and so_work.notecodes  not like '7,%' and so_work.notecodes!='7' and so_work.notecodes  not like '%,7') then 0
+       else null
   end as w_Is_Toll_Free_Number,
   case when (so_work.notecodes like '%,8,%' or so_work.notecodes  like '8,%' or so_work.notecodes='8' or so_work.notecodes  like '%,8') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,8,%' and so_work.notecodes  not like '8,%' and so_work.notecodes!='8' and so_work.notecodes  not like '%,8') then 0
+       else null
   end as w_Is_Google_Voice_Number,
   case when (so_work.notecodes like '%,10,%' or so_work.notecodes  like '10,%' or so_work.notecodes='10' or so_work.notecodes  like '%,10') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,10,%' and so_work.notecodes  not like '10,%' and so_work.notecodes!='10' and so_work.notecodes  not like '%,10') then 0
+       else null
   end as w_Is_Possible_Disconnected,
   case when (so_work.notecodes like '%,11,%' or so_work.notecodes  like '11,%' or so_work.notecodes='11' or so_work.notecodes  like '%,11') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,11,%' and so_work.notecodes  not like '11,%' and so_work.notecodes!='11' and so_work.notecodes  not like '%,11') then 0
+       else null
   end as w_Is_Portable_Voip,
   case when (so_work.notecodes like '%,12,%' or so_work.notecodes  like '12,%' or so_work.notecodes='12' or so_work.notecodes  like '%,12') then 1
-       else 0
+       when  (so_work.notecodes is not null and length(so_work.notecodes) > 0 and so_work.notecodes not like '%,12,%' and so_work.notecodes  not like '12,%' and so_work.notecodes!='12' and so_work.notecodes  not like '%,12') then 0
+       else null
   end as w_Is_Possible_Portable_Voip,
 
 case when so_work.contactaddressout like '%PO BOX%' then 1
@@ -295,35 +354,60 @@ so_work.contactqualityscore as w_contact_quality_score,
 so_work.contactphonetype as w_contact_phone_type,
 extract( days from (so_work.dateofporting - lead_universe.created ) ) as w_days_of_porting_since_in_infinity,
 
+ case when so_hom.tokensused = '5' then 'p5'
+      when so_hom.tokensused = '35' then 'p35'
+      when so_hom.tokensused = '65' then 'p65'
+      when so_hom.tokensused = '95' then 'p95'
+      when so_hom.tokensused = '115' then 'p115'
+ else  null
+ end as h_tokens_used, 
+
+ case when upper(so_hom.errors) like "%NOT VALID%" then 'not_valid'
+      when upper(so_hom.errors) like "%PROVIDE_A_VALID%" then 'provide_valid'
+      when  so_hom.errors is not null and length(so_hom.errors) > 0 and
+            upper(so_hom.errors) not like "%NOT VALID%" and upper(so_hom.errors)               not like "%PROVIDE_A_VALID%" then 'other'
+      else null
+ end as h_errors,
+
   case when (so_hom.notecodes like '%,1,%' or so_hom.notecodes  like '1,%' or so_hom.notecodes='1' or so_hom.notecodes  like '%,1') then 1
-       else 0
+       when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,1,%' and so_hom.notecodes  not like '1,%' and so_hom.notecodes!='1' and so_hom.notecodes  not like '%,1') then 0
+       else null
   end as h_Is_Mailable,
   case when (so_hom.notecodes like '%,2,%' or so_hom.notecodes  like '2,%' or so_hom.notecodes='2' or so_hom.notecodes  like '%,2') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,2,%' and so_hom.notecodes  not like '2,%' and so_hom.notecodes!='2' and so_hom.notecodes  not like '%,2') then 0
+       else null
   end as h_Is_Connected,
   case when (so_hom.notecodes like '%,3,%' or so_hom.notecodes  like '3,%' or so_hom.notecodes='3' or so_hom.notecodes  like '%,3') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,3,%' and so_hom.notecodes  not like '3,%' and so_hom.notecodes!='3' and so_hom.notecodes  not like '%,3') then 0
+       else null
   end as h_Is_Ported,
   case when (so_hom.notecodes like '%,4,%' or so_hom.notecodes  like '4,%' or so_hom.notecodes='4' or so_hom.notecodes  like '%,4') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,4,%' and so_hom.notecodes  not like '4,%' and so_hom.notecodes!='4' and so_hom.notecodes  not like '%,4') then 0
+       else null
   end as h_Is_Wireless,
   case when (so_hom.notecodes like '%,5,%' or so_hom.notecodes  like '5,%' or so_hom.notecodes='5' or so_hom.notecodes  like '%,5') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,5,%' and so_hom.notecodes  not like '5,%' and so_hom.notecodes!='5' and so_hom.notecodes  not like '%,5') then 0
+       else null
   end as h_Is_Unknown_Contact,
   case when (so_hom.notecodes like '%,7,%' or so_hom.notecodes  like '7,%' or so_hom.notecodes='7' or so_hom.notecodes  like '%,7') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,7,%' and so_hom.notecodes  not like '7,%' and so_hom.notecodes!='7' and so_hom.notecodes  not like '%,7') then 0
+       else null
   end as h_Is_Toll_Free_Number,
   case when (so_hom.notecodes like '%,8,%' or so_hom.notecodes  like '8,%' or so_hom.notecodes='8' or so_hom.notecodes  like '%,8') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,8,%' and so_hom.notecodes  not like '8,%' and so_hom.notecodes!='8' and so_hom.notecodes  not like '%,8') then 0
+       else null
   end as h_Is_Google_Voice_Number,
   case when (so_hom.notecodes like '%,10,%' or so_hom.notecodes  like '10,%' or so_hom.notecodes='10' or so_hom.notecodes  like '%,10') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,10,%' and so_hom.notecodes  not like '10,%' and so_hom.notecodes!='10' and so_hom.notecodes  not like '%,10') then 0
+       else null
   end as h_Is_Possible_Disconnected,
   case when (so_hom.notecodes like '%,11,%' or so_hom.notecodes  like '11,%' or so_hom.notecodes='11' or so_hom.notecodes  like '%,11') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,11,%' and so_hom.notecodes  not like '11,%' and so_hom.notecodes!='11' and so_hom.notecodes  not like '%,11') then 0
+       else null
   end as h_Is_Portable_Voip,
   case when (so_hom.notecodes like '%,12,%' or so_hom.notecodes  like '12,%' or so_hom.notecodes='12' or so_hom.notecodes  like '%,12') then 1
-       else 0
+      when  (so_hom.notecodes is not null and length(so_hom.notecodes) > 0 and so_hom.notecodes not like '%,12,%' and so_hom.notecodes  not like '12,%' and so_hom.notecodes!='12' and so_hom.notecodes  not like '%,12') then 0
+       else null
   end as h_Is_Possible_Portable_Voip,
 
 case when so_hom.contactaddressout like '%PO BOX%' then 1
@@ -341,6 +425,28 @@ case when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)
    case when so_hom.contactaddressout is not null and len(so_hom.contactaddressout)>0 then 
     (levenshtein(so_hom.contactaddressout, upper(li.address)))::float/greatest(len(so_hom.contactaddressout), len(li.address))
  else null end as h_cont_addr_lev_dist_ratio,
+
+case when so_hom.contactnameout is not null and len(so_hom.contactnameout)>0 then levenshtein( upper(trim(so_hom.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) 
+else null end as h_cont_name_lev_dist,
+
+case when so_hom.contactnameout is not null and len(so_hom.contactnameout)>0 then least( levenshtein( upper(trim(so_hom.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname))), levenshtein( upper(trim(so_hom.contactnameout)),  upper(trim(li.lname))   || ' ' || upper(trim(li.fname)) ) )
+else null end as h_cont_name_better_perm_lev_dist,
+
+case when so_hom.contactnameout is not null and len(so_hom.contactnameout)>0 then 
+  len(so_hom.contactnameout) 
+else null end as h_cont_name_len,
+
+case when so_hom.contactnameout is not null and len(so_hom.contactnameout)>0 then 
+    (levenshtein( upper(trim(so_hom.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname)) ))::float/greatest(len(upper(trim(so_hom.contactnameout)) ), len(upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) )
+else null end as h_cont_name_lev_dist_ratio, 
+
+case when so_hom.contactnameout is not null and len(so_hom.contactnameout)>0 then 
+    least ( (levenshtein( upper(trim(so_hom.contactnameout)), upper(trim(li.fname)) || ' ' || upper(trim(li.lname)) )),  levenshtein( upper(trim(so_hom.contactnameout)),  upper(trim(li.lname))   || ' ' || upper(trim(li.fname)))) ::float/ greatest(len(upper(trim(so_hom.contactnameout)) ), len(upper(trim(li.fname)) || ' ' || upper(trim(li.lname))) )
+else null end as h_cont_name_better_perm_lev_dist_ratio, 
+
+case when position( upper(trim(li.lname)) in upper(trim(so_hom.contactnameout)) ) > 0 then 1
+     when so_hom.contactnameout is not null and len(so_hom.contactnameout)>0  and position( upper(trim(li.lname)) in upper(trim(so_hom.contactnameout)) ) = 0 then 0 end
+as h_last_name_match,
 
 so_hom.contactqualityscore as h_contact_quality_score,
 so_hom.contactphonetype as h_contact_phone_type,
@@ -363,4 +469,4 @@ left outer join so_data_and_contact_longt_alt as so_work
 on lead_universe.work_phone = so_work.phone_number
 left outer join so_data_and_contact_longt_alt as so_hom
 on lead_universe.home_phone = so_hom.phone_number
-order by current_loan_leadid  limit 10000 offset 20000
+order by current_loan_leadid limit 10000
